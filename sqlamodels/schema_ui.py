@@ -32,10 +32,17 @@ Try installing `sqlamodels` in the same environment where the module is located 
     "introspect_module",
     help="python module to introspect",
 )
-@click.argument("model_classes", type=str, nargs=-1, required=True)
+@click.option(
+    "--exclude-classes",
+    "exclude_classes",
+    default="Base",
+    help="Comma-separated list of classes to exclude. Defaults to 'Base'. See --module option for more details.",
+)
+@click.argument("model_classes", type=str, nargs=-1)
 def schema_cmd(
     model_classes: tuple[str, ...],
     introspect_module: str | None,
+    exclude_classes: str,
     out: IO[str] | None,
     no_singleton: bool = False,
 ) -> None:
@@ -53,6 +60,20 @@ def schema_cmd(
     from sqlalchemy.orm import DeclarativeBase
     from .schema import DynamicSchema
     from .mysqla import get_env
+
+    exclude_classes_set = set(
+        [c.strip() for c in exclude_classes.split(",") if c.strip()]
+        if exclude_classes
+        else [],
+    )
+
+    if not model_classes and not introspect_module:
+        click.secho(
+            "Error: You must provide at least one model class or use the --module option.",
+            err=True,
+            fg="red",
+        )
+        raise click.Abort()
 
     sys.path.insert(0, ".")  # Ensure current directory is in path
 
@@ -97,6 +118,31 @@ def schema_cmd(
                 )
                 raise click.Abort()
             ret.append((class_name, model_cls))
+        if not model_classes and introspect_module:
+            ret.extend(get_modules2())
+        return ret
+
+    def get_modules2():
+        ret = []
+        assert introspect_module is not None
+        try:
+            module = import_module(introspect_module)
+        except ImportError as e:
+            click.secho(
+                f"Error importing {introspect_module}: {e} ({EXPLAIN})",
+                err=True,
+                fg="red",
+            )
+            raise click.Abort()
+        for name in dir(module):
+            obj = getattr(module, name)
+            if (
+                isinstance(obj, type)
+                and issubclass(obj, DeclarativeBase)
+                and obj != DeclarativeBase
+                and (exclude_classes_set and name not in exclude_classes_set)
+            ):
+                ret.append((name, obj))
         return ret
 
     try:
