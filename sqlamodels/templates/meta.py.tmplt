@@ -92,16 +92,16 @@ class BaseSchema:
                 return False, f"String exceeds max length of {col.max_length}", None
         elif col.data_type == DataType.INTEGER:
             try:
-                value = int(value) if isinstance(value, str) else value
+                value = int(value)
             except (ValueError, TypeError):
-                return False, f"Expected integer, got {type(value).__name__}", None
+                return False, f"Expected integer or integer string, got {type(value).__name__}", None
         elif col.data_type == DataType.DECIMAL or col.data_type == DataType.FLOAT:
             try:
-                value = float(value) if isinstance(value, str) else value
+                value = float(value)
             except (ValueError, TypeError):
                 return (
                     False,
-                    f"Expected decimal/float, got {type(value).__name__}",
+                    f"Expected decimal/float or decimal/float string, got {type(value).__name__}",
                     None,
                 )
         elif col.data_type == DataType.ENUM:
@@ -111,7 +111,7 @@ class BaseSchema:
             if isinstance(value, Sequence) and not isinstance(value, str):
                 value = set(value)
             else:
-                value = set([s.strip() for s in str(value).split(",")])
+                value = set([s.strip() for s in str(value).split(",") if s.strip()])
             if value - set(col.enum_values or []):
                 return False, f"Value must be a set of {col.enum_values or []}", None
         elif col.data_type == DataType.DATETIME:
@@ -119,6 +119,7 @@ class BaseSchema:
 
             if not isinstance(value, datetime):
                 try:
+                    # <input type="datetime-local"> returns a string in YYYY-MM-DDTHH:MM format, so we can use fromisoformat
                     value = datetime.fromisoformat(str(value))
                 except (ValueError, TypeError):
                     return False, f"Expected datetime, got {value}", None
@@ -127,6 +128,7 @@ class BaseSchema:
 
             if not isinstance(value, date):
                 try:
+                    # <input type="date"> returns a string in YYYY-MM-DD format, so we can use fromisoformat
                     value = date.fromisoformat(str(value))
                 except (ValueError, TypeError):
                     return False, f"Expected date, got {value}", None
