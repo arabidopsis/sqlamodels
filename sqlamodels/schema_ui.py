@@ -61,12 +61,6 @@ def schema_cmd(
     from .schema import DynamicSchema
     from .mysqla import get_env
 
-    exclude_classes_set = set(
-        [c.strip() for c in exclude_classes.split(",") if c.strip()]
-        if exclude_classes
-        else [],
-    )
-
     if not model_classes and not introspect_module:
         click.secho(
             "Error: You must provide at least one model class or use the --module option.",
@@ -74,6 +68,12 @@ def schema_cmd(
             fg="red",
         )
         raise click.Abort()
+
+    exclude_classes_set = set(
+        [c.strip() for c in exclude_classes.split(",") if c.strip()]
+        if exclude_classes
+        else [],
+    )
 
     sys.path.insert(0, ".")  # Ensure current directory is in path
 
@@ -83,6 +83,13 @@ def schema_cmd(
         for model_class in model_classes:
             # Dynamically import the model class
             if introspect_module:
+                if "." in model_class:
+                    click.secho(
+                        f"Error: When using --module, model classes should not be fully qualified. Got: {model_class}",
+                        err=True,
+                        fg="red",
+                    )
+                    raise click.Abort()
                 module_name, class_name = introspect_module, model_class
             else:
                 module_name, class_name = model_class.rsplit(".", 1)
