@@ -153,9 +153,17 @@ def schema_cmd(
         return ret
 
     try:
+        mods = get_modules()
+        if not mods:
+            click.secho(
+                "Error: No valid model classes found.",
+                err=True,
+                fg="red",
+            )
+            raise click.Abort()
         schemas = [
             DynamicSchema.from_model(class_name, model_cls)
-            for class_name, model_cls in get_modules()
+            for class_name, model_cls in mods
         ]
 
         txt = (
@@ -173,7 +181,7 @@ def schema_cmd(
             out.write(txt)
             to = f" to {out.name}" if out.name else ""
         click.secho(
-            f"Schema code for {', '.join(model_classes)} generated successfully{to}.",
+            f'Schema code for "{", ".join(class_name for class_name, _ in mods)}" generated successfully{to}.',
             err=True,
             fg="green",
             bold=True,
