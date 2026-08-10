@@ -2,46 +2,46 @@ from __future__ import annotations
 
 import re
 import sys
+from collections.abc import Sequence
 from datetime import datetime
 from keyword import iskeyword
 from pathlib import Path
-from typing import Any
-from typing import IO
-from typing import NotRequired
-from typing import Sequence
-from typing import TypedDict
+from typing import IO, Any, NotRequired, TypedDict
 
 import click
-from jinja2 import Environment
-from jinja2 import FileSystemLoader
-from sqlalchemy import BINARY
-from sqlalchemy import BLOB
-from sqlalchemy import Boolean
-from sqlalchemy import CHAR
-from sqlalchemy import Column
-from sqlalchemy import create_engine
-from sqlalchemy import Date
-from sqlalchemy import DateTime
-from sqlalchemy import DECIMAL
-from sqlalchemy import Enum
-from sqlalchemy import Float
-from sqlalchemy import Index
-from sqlalchemy import Integer
-from sqlalchemy import JSON
-from sqlalchemy import MetaData
-from sqlalchemy import String
-from sqlalchemy import Table
-from sqlalchemy import Text
-from sqlalchemy import TIMESTAMP
-from sqlalchemy.dialects.mysql import DOUBLE
-from sqlalchemy.dialects.mysql import LONGBLOB
-from sqlalchemy.dialects.mysql import LONGTEXT
-from sqlalchemy.dialects.mysql import MEDIUMBLOB
-from sqlalchemy.dialects.mysql import MEDIUMTEXT
-from sqlalchemy.dialects.mysql import SET as Set
-from sqlalchemy.dialects.mysql import TEXT
-from sqlalchemy.dialects.mysql import TINYTEXT
-from sqlalchemy.dialects.mysql import YEAR
+from jinja2 import Environment, FileSystemLoader
+from sqlalchemy import (
+    BINARY,
+    BLOB,
+    CHAR,
+    DECIMAL,
+    JSON,
+    TIMESTAMP,
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    Enum,
+    Float,
+    Index,
+    Integer,
+    MetaData,
+    String,
+    Table,
+    Text,
+    create_engine,
+)
+from sqlalchemy.dialects.mysql import (
+    DOUBLE,
+    LONGBLOB,
+    LONGTEXT,
+    MEDIUMBLOB,
+    MEDIUMTEXT,
+    SET as Set,
+    TEXT,
+    TINYTEXT,
+    YEAR,
+)
 
 
 def tolist(alist: list[Any]) -> str:
@@ -184,7 +184,7 @@ class ModelMaker:
         if "engine" in options:
             engine = options["engine"]
 
-        c: Column
+        c: Column[Any]
         for c in table.columns:
             typ = c.type
             atyp = str(typ)
@@ -293,7 +293,8 @@ class ModelMaker:
                 imports.add(atyp)
 
             else:
-                raise RuntimeError(f'unknown field "{table.name}.{c.name}" {c.type}')
+                msg = f"unknown field {table.name}.{c.name} {c.type}"
+                raise TypeError(msg)
             if c.nullable:
                 pytype = pytype + " | None"
             d = ColDict(
@@ -309,15 +310,14 @@ class ModelMaker:
             )
 
             if hasattr(c.type, "length"):
-                d["max_length"] = c.type.length  # type: ignore
+                d["max_length"] = c.type.length  # pyright: ignore[reportAttributeAccessIssue]
             columns.append(d)
             for i in indexes:
-                if len(i.columns) == 1:
-                    if c.name in i.columns:
-                        d["index"] = True
-                        d["unique"] = i.unique
-                        indexes.remove(i)
-                        break
+                if len(i.columns) == 1 and c.name in i.columns:
+                    d["index"] = True
+                    d["unique"] = i.unique
+                    indexes.remove(i)
+                    break
 
         elist: list[tuple[str, str]] = []
         for fs, name in enums.items():

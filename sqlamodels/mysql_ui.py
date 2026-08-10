@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 import sys
-from typing import IO
-from typing import Sequence
+from collections.abc import Sequence
+from typing import IO, TYPE_CHECKING
 
 import click
 
 from .cli import cli
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
-def shared_options(f):
+
+def shared_options(f: Callable[..., None]) -> Callable[..., None]:
     """Add an --engine option to a click command."""
     f = click.option(
         "--engine",
@@ -51,9 +54,9 @@ def models(
     tables: Sequence[str],
     without_tablename: bool,
     without_table_args: bool,
-):
+) -> None:
     """Render tables into sqlalchemy DeclarativeBase classes."""
-    from .mysqla import connect_mysql, ModelMaker, get_env
+    from .mysqla import ModelMaker, connect_mysql, get_env
 
     # click.secho(f"# connecting to {host}", err=True)
     if abstract:
@@ -94,9 +97,9 @@ def backups(
     without_tablename: bool,
     tables: Sequence[str],
     without_table_args: bool,
-):
+) -> None:
     """Make a DeclarativeBase table that's a "backup" of another."""
-    from .mysqla import connect_mysql, ModelMaker, get_env
+    from .mysqla import ModelMaker, connect_mysql, get_env
 
     if abstract:
         without_tablename = True

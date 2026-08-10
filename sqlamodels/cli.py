@@ -5,5 +5,5 @@ import click
 
 @click.group()
 @click.version_option()
-def cli():
+def cli() -> None:
     pass

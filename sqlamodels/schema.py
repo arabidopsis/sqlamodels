@@ -2,16 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import inspect
-from sqlalchemy import String
+from sqlalchemy import String, inspect
 
 if TYPE_CHECKING:
     from sqlalchemy import Column
-    from sqlalchemy.orm import Mapper
-    from sqlalchemy.orm import DeclarativeBase
+    from sqlalchemy.orm import DeclarativeBase, Mapper
 
 
 # change these in sqlamodels/templates/meta.py.tmplt as well
@@ -84,7 +81,7 @@ class DynamicSchema:
         """
         from .mysqla import column_name  # Import here to avoid circular import
 
-        mapper: Mapper = inspect(model_class)
+        mapper: Mapper[DeclarativeBase] = inspect(model_class)
 
         columns: dict[str, ColumnMetadata] = {}
         column: Column[Any]
@@ -127,7 +124,7 @@ class DynamicSchema:
         return self.columns.get(name, None)
 
     @classmethod
-    def _get_data_type(cls, column: Column) -> DataType:
+    def _get_data_type(cls, column: Column[Any]) -> DataType:
         """Get DataType from SQLAlchemy column type."""
         col_type = column.type
         type_name = type(col_type).__name__.upper()
@@ -158,7 +155,7 @@ class DynamicSchema:
             return DataType.STRING
 
     @classmethod
-    def _get_max_length(cls, column: Column) -> int:
+    def _get_max_length(cls, column: Column[Any]) -> int:
         """Get max length from String column type."""
         col_type = column.type
         if isinstance(col_type, String):
@@ -166,7 +163,7 @@ class DynamicSchema:
         return 0
 
     @classmethod
-    def _get_enum_values(cls, column: Column) -> list[str]:
+    def _get_enum_values(cls, column: Column[Any]) -> list[str]:
         """Get enum values from Enum/Set column type."""
         col_type = column.type
         type_name = type(col_type).__name__.upper()
@@ -175,9 +172,9 @@ class DynamicSchema:
 
         # Extract enum values from SQLAlchemy Enum type
         if hasattr(col_type, "enums"):
-            return list(col_type.enums)  # type: ignore
+            return list(col_type.enums)  # pyright: ignore[reportAttributeAccessIssue]
         elif hasattr(col_type, "enum_class"):
-            return [e.value for e in col_type.enum_class]  # type: ignore
+            return [e.value for e in col_type.enum_class]  # pyright: ignore[reportAttributeAccessIssue]
         if hasattr(col_type, "values"):
-            return list(col_type.values)  # type: ignore
+            return list(col_type.values)  # pyright: ignore[reportAttributeAccessIssue]
         return []

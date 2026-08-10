@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from types import ModuleType
 from typing import IO
 
 import click
@@ -56,10 +57,12 @@ def schema_cmd(
     """
     import sys
     from importlib import import_module
+
     from sqlalchemy.exc import NoInspectionAvailable
     from sqlalchemy.orm import DeclarativeBase
-    from .schema import DynamicSchema
+
     from .mysqla import get_env
+    from .schema import DynamicSchema
 
     if not model_classes and not introspect_module:
         click.secho(
@@ -70,16 +73,14 @@ def schema_cmd(
         raise click.Abort()
 
     exclude_classes_set = set(
-        [c.strip() for c in exclude_classes.split(",") if c.strip()]
-        if exclude_classes
-        else [],
+        [c.strip() for c in exclude_classes.split(",") if c.strip()] if exclude_classes else [],
     )
 
     sys.path.insert(0, ".")  # Ensure current directory is in path
 
-    def get_modules():
+    def get_modules() -> list[tuple[str, type[DeclarativeBase]]]:
         ret = []
-        mdict = {}
+        mdict: dict[str, ModuleType] = {}
         for model_class in model_classes:
             # Dynamically import the model class
             if introspect_module:
@@ -89,7 +90,7 @@ def schema_cmd(
                         err=True,
                         fg="red",
                     )
-                    raise click.Abort()
+                    raise click.Abort
                 module_name, class_name = introspect_module, model_class
             else:
                 module_name, class_name = model_class.rsplit(".", 1)
@@ -105,7 +106,7 @@ def schema_cmd(
                     err=True,
                     fg="red",
                 )
-                raise click.Abort()
+                raise click.Abort
             model_cls = getattr(module, class_name, None)
             if model_cls is None:
                 click.secho(
@@ -113,7 +114,7 @@ def schema_cmd(
                     err=True,
                     fg="red",
                 )
-                raise click.Abort()
+                raise click.Abort
             if not isinstance(model_cls, type) or not issubclass(
                 model_cls,
                 DeclarativeBase,
@@ -123,13 +124,13 @@ def schema_cmd(
                     err=True,
                     fg="red",
                 )
-                raise click.Abort()
+                raise click.Abort
             ret.append((class_name, model_cls))
         if not model_classes and introspect_module:
             ret.extend(get_modules2())
         return ret
 
-    def get_modules2():
+    def get_modules2() -> list[tuple[str, type[DeclarativeBase]]]:
         ret = []
         assert introspect_module is not None
         try:
@@ -161,10 +162,7 @@ def schema_cmd(
                 fg="red",
             )
             raise click.Abort()
-        schemas = [
-            DynamicSchema.from_model(class_name, model_cls)
-            for class_name, model_cls in mods
-        ]
+        schemas = [DynamicSchema.from_model(class_name, model_cls) for class_name, model_cls in mods]
 
         txt = (
             get_env()
