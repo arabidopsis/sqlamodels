@@ -57,7 +57,6 @@ def models(  # noqa: PLR0913
     """Render tables into sqlalchemy DeclarativeBase classes."""
     from .mysqla import ModelMaker, connect_mysql, get_env
 
-    # click.secho(f"# connecting to {host}", err=True)
     if abstract:
         without_tablename = True
     if not host.startswith("mysql"):
@@ -114,9 +113,7 @@ def backups(  # noqa: PLR0917, PLR0913
     )
     if not name:
         name = "{}_backup"
-    # indexes = [insp.get_indexes(t.name) for t in tables]
     ttables = [mm.mkcopy(t, name.format(t.name), t.metadata, pk) for t in ttables]
-    # print(indexes)
 
     mm.run_tables(ttables, out=out, abstract=abstract)
 
