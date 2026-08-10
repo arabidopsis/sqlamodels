@@ -54,12 +54,13 @@ class DynamicSchema:
         self,
         class_name: str,
         columns: dict[str, ColumnMetadata],
-    ):
+    ) -> None:
         """Initialize schema with class name and columns.
 
         Args:
             class_name: Name of the class
             columns: A dict of name -> ColumnMetadata
+
         """
         self.class_name = class_name
         self.columns = columns
@@ -74,10 +75,12 @@ class DynamicSchema:
         """Create schema from SQLAlchemy model class.
 
         Args:
+            class_name: Name of the class
             model_class: SQLAlchemy model class
 
         Returns:
             DynamicSchema instance
+
         """
         from .mysqla import column_name  # Import here to avoid circular import
 
@@ -124,7 +127,7 @@ class DynamicSchema:
         return self.columns.get(name, None)
 
     @classmethod
-    def _get_data_type(cls, column: Column[Any]) -> DataType:
+    def _get_data_type(cls, column: Column[Any]) -> DataType:  # noqa: PLR0911
         """Get DataType from SQLAlchemy column type."""
         col_type = column.type
         type_name = type(col_type).__name__.upper()
@@ -134,25 +137,24 @@ class DynamicSchema:
             {"STRING", "VARCHAR", "TEXT", "CHAR", "NVARCHAR", "CLOB"},
         ):
             return DataType.STRING
-        elif "INT" in type_name:
+        if "INT" in type_name:
             return DataType.INTEGER
-        elif "ENUM" in type_name:
+        if "ENUM" in type_name:
             return DataType.ENUM
-        elif "SET" in type_name:
+        if "SET" in type_name:
             return DataType.SET
-        elif "DECIMAL" in type_name:
+        if "DECIMAL" in type_name:
             return DataType.DECIMAL
-        elif "DATETIME" in type_name:
+        if "DATETIME" in type_name:
             return DataType.DATETIME
-        elif "DATE" in type_name:
+        if "DATE" in type_name:
             return DataType.DATE
-        elif contains(type_name, {"FLOAT", "REAL", "DOUBLE"}):
+        if contains(type_name, {"FLOAT", "REAL", "DOUBLE"}):
             return DataType.FLOAT
-        elif contains(type_name, {"BLOB", "BINARY", "BYTES"}):
+        if contains(type_name, {"BLOB", "BINARY", "BYTES"}):
             return DataType.BLOB
-        else:
-            # Default to string for unknown types
-            return DataType.STRING
+        # Default to string for unknown types
+        return DataType.STRING
 
     @classmethod
     def _get_max_length(cls, column: Column[Any]) -> int:
@@ -173,7 +175,7 @@ class DynamicSchema:
         # Extract enum values from SQLAlchemy Enum type
         if hasattr(col_type, "enums"):
             return list(col_type.enums)  # pyright: ignore[reportAttributeAccessIssue]
-        elif hasattr(col_type, "enum_class"):
+        if hasattr(col_type, "enum_class"):
             return [e.value for e in col_type.enum_class]  # pyright: ignore[reportAttributeAccessIssue]
         if hasattr(col_type, "values"):
             return list(col_type.values)  # pyright: ignore[reportAttributeAccessIssue]

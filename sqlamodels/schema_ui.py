@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from types import ModuleType
-from typing import IO
+from typing import IO, TYPE_CHECKING
 
 import click
 
 from .cli import cli
+
+if TYPE_CHECKING:
+    from types import ModuleType
 
 EXPLAIN = """
 This error might be due to the fact that the module imports more than
@@ -40,20 +42,20 @@ Try installing `sqlamodels` in the same environment where the module is located 
     help="Comma-separated list of classes to exclude. Defaults to 'Base'. See --module option for more details.",
 )
 @click.argument("model_classes", type=str, nargs=-1)
-def schema_cmd(
+def schema_cmd(  # noqa: C901 PLR0915
     model_classes: tuple[str, ...],
     introspect_module: str | None,
     exclude_classes: str,
     out: IO[str] | None,
+    *,
     no_singleton: bool = False,
 ) -> None:
     """Generate schema code for given SQLAlchemy model classes.
 
-    Args:
-        model_classes: Fully qualified names of the SQLAlchemy model classes
-                       (e.g., 'anigozanthos.models.SequenceInventoryAll').
-                       *OR* use the --module option to specify a module to introspect.
-                       and just provide the class names (e.g., 'SequenceInventoryAll').
+    model_classes: Fully qualified names of the SQLAlchemy model classes
+                    (e.g., 'anigozanthos.models.SequenceInventoryAll').
+                    *OR* use the --module option to specify a module to introspect.
+                    and just provide the class names (e.g., 'SequenceInventoryAll').
     """
     import sys
     from importlib import import_module
@@ -70,7 +72,7 @@ def schema_cmd(
             err=True,
             fg="red",
         )
-        raise click.Abort()
+        raise click.Abort
 
     exclude_classes_set = set(
         [c.strip() for c in exclude_classes.split(",") if c.strip()] if exclude_classes else [],
@@ -106,7 +108,7 @@ def schema_cmd(
                     err=True,
                     fg="red",
                 )
-                raise click.Abort
+                raise click.Abort from e
             model_cls = getattr(module, class_name, None)
             if model_cls is None:
                 click.secho(
@@ -132,7 +134,7 @@ def schema_cmd(
 
     def get_modules2() -> list[tuple[str, type[DeclarativeBase]]]:
         ret = []
-        assert introspect_module is not None
+        assert introspect_module is not None  # noqa: S101
         try:
             module = import_module(introspect_module)
         except ImportError as e:
@@ -141,7 +143,7 @@ def schema_cmd(
                 err=True,
                 fg="red",
             )
-            raise click.Abort()
+            raise click.Abort from e
         for name in dir(module):
             obj = getattr(module, name)
             if (
@@ -161,7 +163,7 @@ def schema_cmd(
                 err=True,
                 fg="red",
             )
-            raise click.Abort()
+            raise click.Abort
         schemas = [DynamicSchema.from_model(class_name, model_cls) for class_name, model_cls in mods]
 
         txt = (
@@ -186,4 +188,4 @@ def schema_cmd(
         )
     except NoInspectionAvailable as e:
         click.secho(f"Error: {e}", err=True, fg="red")
-        raise click.Abort()
+        raise click.Abort from e

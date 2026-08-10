@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sys
-from collections.abc import Sequence
 from typing import IO, TYPE_CHECKING
 
 import click
@@ -9,7 +8,7 @@ import click
 from .cli import cli
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
 
 
 def shared_options(f: Callable[..., None]) -> Callable[..., None]:
@@ -33,25 +32,25 @@ def shared_options(f: Callable[..., None]) -> Callable[..., None]:
         is_flag=True,
         help="don't add __tablename__",
     )(f)
-    f = click.option(
+    return click.option(
         "-y",
         "--without-table-args",
         is_flag=True,
         help="don't add __table_args__",
     )(f)
-    return f
 
 
 @cli.command()
 @shared_options
 @click.argument("host", required=True)
 @click.argument("tables", nargs=-1)
-def models(
+def models(  # noqa: PLR0913
     host: str,
     out: IO[str],
-    abstract: bool,
     mysql_engine: str | None,
     tables: Sequence[str],
+    *,
+    abstract: bool,
     without_tablename: bool,
     without_table_args: bool,
 ) -> None:
@@ -87,15 +86,16 @@ def models(
 @shared_options
 @click.argument("host", required=True)
 @click.argument("tables", nargs=-1)
-def backups(
+def backups(  # noqa: PLR0917, PLR0913
     host: str,
     name: str | None,
     out: IO[str],
     pk: str,
     mysql_engine: str | None,
+    tables: Sequence[str],
+    *,
     abstract: bool,
     without_tablename: bool,
-    tables: Sequence[str],
     without_table_args: bool,
 ) -> None:
     """Make a DeclarativeBase table that's a "backup" of another."""
