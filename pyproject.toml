@@ -29,6 +29,9 @@ check_untyped_defs = true
 no_implicit_reexport = true
 warn_redundant_casts = true
 warn_unused_ignores = true
+warn_unreachable = true
+ignore_missing_imports = false
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 exclude = [
     '^fabfile\.py$', # Excludes specific file using literal string (single quotes)
     'tests/',        # Excludes anything matching this path substring

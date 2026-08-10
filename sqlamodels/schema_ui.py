@@ -95,7 +95,7 @@ def schema_cmd(  # noqa: C901 PLR0915
                     raise click.Abort
                 module_name, class_name = introspect_module, model_class
             else:
-                module_name, class_name = model_class.rsplit(".", 1)
+                module_name, class_name = model_class.rsplit(".", maxsplit=1)
             try:
                 if module_name in mdict:
                     module = mdict[module_name]
