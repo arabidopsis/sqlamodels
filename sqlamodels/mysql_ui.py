@@ -54,7 +54,7 @@ def models(  # noqa: PLR0913
     without_tablename: bool,
     without_table_args: bool,
 ) -> None:
-    """Render tables into sqlalchemy DeclarativeBase classes."""
+    """Render SQL tables into sqlalchemy DeclarativeBase classes."""
     from .mysqla import ModelMaker, connect_mysql, get_env
 
     if abstract:

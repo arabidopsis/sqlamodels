@@ -3,6 +3,6 @@ install:
 	rm -rf dist/
 
 mypy:
-	mypy --python-executable=python3  sqlamodels
+	mypy --python-executable=.venv/bin/python3  sqlamodels
 
 .PHONY: install mypy
